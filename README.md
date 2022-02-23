@@ -1,3 +1,3 @@
-### Script to unpack images from Dota 2 client archive (.vpk) for Windows
+# Script to unpack assets from Dota 2 client package (.vpk) for Windows
 
 guide soon
