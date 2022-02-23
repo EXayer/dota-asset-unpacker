@@ -40,7 +40,6 @@ $filePathes = Get-ChildItem -Path "$($inputDir)\images\*.txt" -Recurse -Force
 
 # TODO: prompt user
 
-$job = $null;
 foreach ($filePath in $filePathes)
 {
   $vpkPathes = Get-Content $filePath;
@@ -54,22 +53,10 @@ foreach ($filePath in $filePathes)
     $command = "$($baseCommand) --vpk_filepath `"$($imagePath)`" --vpk_decompile"
 
     cmd /c $command 
-
-    # in paralell
-    #$job = Start-Job -ScriptBlock { cmd /c $command }
-   
   }
 }
 
 # post process
-while ($true)
-{
-  if ($null -eq $job -or $job.State -eq "Completed")
-  {
-    # remove suffix '_png' in file names
-    Get-ChildItem -Path $outputRoot -Recurse -Include "*_png.png" | Rename-Item -NewName { $_.Name.replace("_png.png", ".png") }
-    Write-Host "Removed '_png' suffix"
-
-    break
-  }
-}
+# remove suffix '_png' in file names
+Get-ChildItem -Path $outputRoot -Recurse -Include "*_png.png" | Rename-Item -NewName { $_.Name.replace("_png.png", ".png") }
+Write-Host "Removed '_png' suffix"
