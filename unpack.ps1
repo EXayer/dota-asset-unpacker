@@ -54,13 +54,14 @@ if (-Not (Test-Path -Path $dotaMainVpkPath -PathType Leaf))
   exit
 }
 
-$baseCommand = "`"$($decompilerPath)`" -i `"$($dotaMainVpkPath)`" -o `"$($outputRoot)`""
+$baseCommand = "`"$($decompilerPath)`" -i `"$($dotaMainVpkPath)`""
 
 switch ($mode)
 {
   $INPUT_IMAGES_MODE # decompile images configured by input\images files
   {
     $filePathes = Get-ChildItem -Path "$($inputRoot)\images\*.txt" -Recurse -Force
+    $outputPath = "$($outputRoot)\images"
 
     foreach ($filePath in $filePathes)
     {
@@ -80,7 +81,7 @@ switch ($mode)
         }
 
         $imageVpkPath = "panorama/images/$($vpkPath)_png.vtex_c";
-        $command = "$($baseCommand) --vpk_filepath `"$($imageVpkPath)`" --vpk_decompile"
+        $command = "$($baseCommand) -o `"$($outputPath)`" --vpk_filepath `"$($imageVpkPath)`" --vpk_decompile"
 
         cmd /c $command
         ++$counter;
@@ -95,7 +96,8 @@ switch ($mode)
   $FULL_VPK_MODE # decompile all assets, convert images to png
   {
     Write-Host "Warning: You need have enough space on the disk ~20Gb"
-    $command = "$($baseCommand) --vpk_decompile --threads 24 --vpk_cache"
+    $outputPath = "$($outputRoot)\vpk"
+    $command = "$($baseCommand) -o `"$($outputPath)`" --vpk_decompile --threads 24 --vpk_cache"
 
     cmd /c $command
   
