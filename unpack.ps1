@@ -1,12 +1,14 @@
-param ([string]$mode = "input-images")
+param ([string]$mode = "list")
 
 # modes
-$INPUT_IMAGES_MODE = "input-images";
-$FULL_VPK_MODE = "full-vpk";
+$IMAGE_LIST_MODE = "list";
+$FULL_VPK_MODE = "vpk";
+$CONVERT_MODE = "convert";
 
 $supportedModes = @{
-  $INPUT_IMAGES_MODE = $INPUT_IMAGES_MODE
+  $IMAGE_LIST_MODE = $IMAGE_LIST_MODE
   $FULL_VPK_MODE = $FULL_VPK_MODE
+  $CONVERT_MODE = $CONVERT_MODE
 }
 
 if (-Not $supportedModes.ContainsKey($mode))
@@ -17,17 +19,18 @@ if (-Not $supportedModes.ContainsKey($mode))
   exit
 }
 
+$isConvertMode = $CONVERT_MODE -eq $mode;
+
 # env
-. "$($PSScriptRoot)\ENV.ps1"
+. .\"ENV.ps1"
 
-$isEnvHasDotaInstallFolder = Get-Variable -Name DOTA_INSTALL_FOLDER -Scope Global -ErrorAction SilentlyContinue
+$isEnvHasDotaInstallFolder = Get-Variable -Name DOTA_INSTALL_FOLDER -Scope Script -ErrorAction SilentlyContinue
 
-if ($null -eq $isEnvHasDotaInstallFolder)
+if (-Not $isConvertMode -and $null -eq $isEnvHasDotaInstallFolder)
 {
   Write-Host "Error: DOTA_INSTALL_FOLDER variable is not defined. Define it in ENV.ps1 file."
 
   exit
-
 }
 
 # i/o
@@ -47,21 +50,23 @@ if (-Not (Test-Path -Path $decompilerPath -PathType Leaf))
 # dota 2 vpk path
 $dotaMainVpkPath = "$($DOTA_INSTALL_FOLDER)\dota 2 beta\game\dota\pak01_dir.vpk"
 
-if (-Not (Test-Path -Path $dotaMainVpkPath -PathType Leaf))
+if (-Not $isConvertMode -and -Not (Test-Path -Path $dotaMainVpkPath -PathType Leaf))
 {
   Write-Host "Error: Dota 2 files not found - $dotaMainVpkPath. Check DOTA_INSTALL_FOLDER variable in ENV.ps1 file."
 
   exit
 }
 
-$baseCommand = "`"$($decompilerPath)`" -i `"$($dotaMainVpkPath)`""
+$baseCommand = "`"$($decompilerPath)`""
+$baseCommandDefInput = "$($baseCommand) -i `"$($dotaMainVpkPath)`""
+
 
 switch ($mode)
 {
-  $INPUT_IMAGES_MODE # decompile images configured by input\images files
+  $IMAGE_LIST_MODE # decompile images configured by input\list files
   {
-    $filePathes = Get-ChildItem -Path "$($inputRoot)\images\*.txt" -Recurse -Force
-    $outputPath = "$($outputRoot)\images"
+    $filePathes = Get-ChildItem -Path "$($inputRoot)\list\*.txt" -Recurse -Force
+    $outputPath = "$($outputRoot)\list"
 
     foreach ($filePath in $filePathes)
     {
@@ -81,7 +86,7 @@ switch ($mode)
         }
 
         $imageVpkPath = "panorama/images/$($vpkPath)_png.vtex_c";
-        $command = "$($baseCommand) -o `"$($outputPath)`" --vpk_filepath `"$($imageVpkPath)`" --vpk_decompile"
+        $command = "$($baseCommandDefInput) -o `"$($outputPath)`" --vpk_filepath `"$($imageVpkPath)`" --vpk_decompile"
 
         cmd /c $command
         ++$counter;
@@ -97,8 +102,20 @@ switch ($mode)
   {
     Write-Host "Warning: You need have enough space on the disk ~20Gb"
     $outputPath = "$($outputRoot)\vpk"
-    $command = "$($baseCommand) -o `"$($outputPath)`" --vpk_decompile --threads 24 --vpk_cache"
+    $command = "$($baseCommandDefInput) -o `"$($outputPath)`" --vpk_decompile --threads 24 --vpk_cache"
 
+    cmd /c $command
+  
+    Break
+  }
+
+  $CONVERT_MODE # convert .vtex_c to .png
+  {
+    $filePathes = Get-ChildItem -Path "$($inputRoot)\convert\*.vtex_c" -Recurse -Force
+    $inputPath = "$($inputRoot)\convert";
+    $outputPath = "$($outputRoot)\convert"
+    
+    $command = "$($baseCommand) -i `"$($inputPath)`" -o `"$($outputPath)`" --vpk_decompile --recursive"
     cmd /c $command
   
     Break
