@@ -63,4 +63,4 @@ Converted images will be located in `output\convert` folder.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
